@@ -1,5 +1,8 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
+
+const ThreeBackground = dynamic(() => import('./ThreeBackground'), { ssr: false });
 
 const FILTER_BUTTONS = ['ALL WORK', 'RESIDENTIAL', 'COMMERCIAL', 'INTERIORS'] as const;
 
@@ -84,12 +87,12 @@ export default function Hero({ siteReady }: { siteReady: boolean }) {
         minHeight: '100vh',
         position: 'relative',
         backgroundColor: 'var(--ink)',
-        backgroundImage:
-          'linear-gradient(rgba(198,156,26,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(198,156,26,0.035) 1px, transparent 1px)',
-        backgroundSize: '72px 72px',
-        overflow: 'hidden',
+        overflowX: 'clip',
       }}
     >
+      {/* Three.js architectural background */}
+      <ThreeBackground />
+
       {/* Top-left corner label */}
       <span
         style={{
@@ -149,7 +152,7 @@ export default function Hero({ siteReady }: { siteReady: boolean }) {
             <div
               style={{
                 transform: siteReady
-                  ? `translateX(${parallaxOffset * -30}px)`
+                  ? `translateX(${parallaxOffset * -14}px)`
                   : 'none',
                 transition: 'transform 0.6s ease',
               }}
@@ -195,7 +198,7 @@ export default function Hero({ siteReady }: { siteReady: boolean }) {
             <div
               style={{
                 transform: siteReady
-                  ? `translateX(${parallaxOffset * 20}px)`
+                  ? `translateX(${parallaxOffset * 10}px)`
                   : 'none',
                 transition: 'transform 0.6s ease',
               }}
