@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 
 const GALLERY_PROJECTS = [
@@ -53,18 +53,17 @@ const GALLERY_PROJECTS = [
   },
 ];
 
+const POSITIONS = [
+  { left: '2%',  top: '5%',  width: '28%', rotate: -2.5, zIndex: 1 },
+  { left: '24%', top: '18%', width: '22%', rotate: 1.8,  zIndex: 3 },
+  { left: '44%', top: '3%',  width: '26%', rotate: -1.2, zIndex: 2 },
+  { left: '66%', top: '12%', width: '20%', rotate: 3.0,  zIndex: 4 },
+  { left: '10%', top: '42%', width: '24%', rotate: 2.2,  zIndex: 2 },
+  { left: '58%', top: '38%', width: '30%', rotate: -2.0, zIndex: 3 },
+];
+
 export default function Gallery() {
-  const [activePreview, setActivePreview] = useState<string | null>(null);
-  const previewSrc = useRef<string>('');
-
-  const handleEnter = (src: string) => {
-    previewSrc.current = src;
-    setActivePreview(src);
-  };
-
-  const handleLeave = () => {
-    setActivePreview(null);
-  };
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
   return (
     <section
@@ -75,34 +74,6 @@ export default function Gallery() {
         position: 'relative',
       }}
     >
-      {/* Hover preview image — desktop only */}
-      <div
-        className="gallery-preview"
-        style={{
-          position: 'fixed',
-          right: '5vw',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          width: 'clamp(220px, 22vw, 340px)',
-          aspectRatio: '4/3',
-          overflow: 'hidden',
-          pointerEvents: 'none',
-          zIndex: 50,
-          opacity: activePreview ? 1 : 0,
-          transition: 'opacity 0.35s ease',
-        }}
-      >
-        {previewSrc.current && (
-          <Image
-            src={previewSrc.current}
-            alt="Preview"
-            fill
-            unoptimized
-            style={{ objectFit: 'cover' }}
-          />
-        )}
-      </div>
-
       {/* Header */}
       <div style={{ marginBottom: 60 }}>
         <p
@@ -134,21 +105,73 @@ export default function Gallery() {
         </h2>
       </div>
 
-      {/* Project list */}
+      {/* Scattered photos — desktop only */}
+      <div
+        className="gallery-scattered"
+        style={{
+          height: 'clamp(400px, 60vh, 700px)',
+          position: 'relative',
+          overflow: 'hidden',
+          marginBottom: 80,
+        }}
+      >
+        {GALLERY_PROJECTS.map((project, i) => {
+          const pos = POSITIONS[i];
+          const isLifted = hoveredIdx === i;
+
+          return (
+            <div
+              key={project.slug}
+              style={{
+                position: 'absolute',
+                left: pos.left,
+                top: pos.top,
+                width: pos.width,
+                aspectRatio: '4/3',
+                overflow: 'hidden',
+                border: isLifted
+                  ? '2px solid rgba(198,156,26,0.5)'
+                  : '2px solid rgba(242,232,211,0.08)',
+                zIndex: isLifted ? 20 : pos.zIndex,
+                transform: isLifted
+                  ? 'rotate(0deg) scale(1.08)'
+                  : `rotate(${pos.rotate}deg) scale(1)`,
+                transition: 'transform 0.4s ease, border-color 0.4s ease, z-index 0s',
+              }}
+            >
+              <Image
+                src={project.cover}
+                alt={project.name}
+                fill
+                unoptimized
+                style={{
+                  objectFit: 'cover',
+                  filter: isLifted
+                    ? 'saturate(1) brightness(0.95)'
+                    : 'saturate(0.7) brightness(0.85)',
+                  transition: 'filter 0.4s ease',
+                }}
+              />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Editorial list */}
       <div>
-        {GALLERY_PROJECTS.map((project) => (
+        {GALLERY_PROJECTS.map((project, i) => (
           <GalleryRow
             key={project.slug}
             project={project}
-            onEnter={() => handleEnter(project.cover)}
-            onLeave={handleLeave}
+            onEnter={() => setHoveredIdx(i)}
+            onLeave={() => setHoveredIdx(null)}
           />
         ))}
       </div>
 
       <style>{`
         @media (max-width: 767px) {
-          .gallery-preview { display: none !important; }
+          .gallery-scattered { display: none !important; }
           .gallery-meta { display: none !important; }
           .gallery-arrow { display: block !important; opacity: 1 !important; transform: none !important; }
         }
@@ -226,7 +249,7 @@ function GalleryRow({
         {project.name}
       </span>
 
-      {/* Category / Year — hidden on mobile */}
+      {/* Category / Year */}
       <span
         className="gallery-meta"
         style={{

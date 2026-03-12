@@ -3,68 +3,52 @@ import { useEffect, useRef, useState } from 'react';
 
 const FILTER_BUTTONS = ['ALL WORK', 'RESIDENTIAL', 'COMMERCIAL', 'INTERIORS'] as const;
 
-interface Particle {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  size: number;
-}
-
-export default function Hero() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+export default function Hero({ siteReady }: { siteReady: boolean }) {
+  const line1Ref = useRef<HTMLDivElement>(null);
+  const line2Ref = useRef<HTMLDivElement>(null);
+  const ruleRef = useRef<HTMLDivElement>(null);
+  const infoRef = useRef<HTMLDivElement>(null);
   const tickerRef = useRef<HTMLDivElement>(null);
   const [activeFilter, setActiveFilter] = useState<string>('ALL WORK');
+  const [mouseX, setMouseX] = useState(0);
 
+  // GSAP entrance
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!siteReady) return;
 
-    let animFrame: number;
-    const particles: Particle[] = [];
+    const run = async () => {
+      const gsapModule = await import('gsap');
+      const gsap = gsapModule.default || gsapModule.gsap;
+      if (!gsap) return;
 
-    const resize = () => {
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
+      gsap.set(line1Ref.current, { y: '110%' });
+      gsap.set(line2Ref.current, { y: '110%' });
+      gsap.set(ruleRef.current, { scaleX: 0, transformOrigin: 'left center' });
+      gsap.set(infoRef.current, { opacity: 0, y: 20 });
+      gsap.set(tickerRef.current, { opacity: 0 });
+
+      const tl = gsap.timeline({ delay: 0.1 });
+      tl.to(line1Ref.current, { y: '0%', duration: 1.1, ease: 'power4.out' })
+        .to(ruleRef.current, { scaleX: 1, duration: 0.8, ease: 'power3.inOut' }, '-=0.6')
+        .to(line2Ref.current, { y: '0%', duration: 1.1, ease: 'power4.out' }, '-=0.8')
+        .to(infoRef.current, { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }, '-=0.4')
+        .to(tickerRef.current, { opacity: 1, duration: 0.6 }, '-=0.2');
     };
-    resize();
-    window.addEventListener('resize', resize);
 
-    for (let i = 0; i < 50; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: (Math.random() - 0.5) * 0.4,
-        size: Math.random() * 2 + 1,
-      });
-    }
+    run();
+  }, [siteReady]);
 
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      for (const p of particles) {
-        p.x += p.vx;
-        p.y += p.vy;
-        if (p.x < 0) p.x = canvas.width;
-        if (p.x > canvas.width) p.x = 0;
-        if (p.y < 0) p.y = canvas.height;
-        if (p.y > canvas.height) p.y = 0;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(232, 82, 10, 0.15)';
-        ctx.fill();
-      }
-      animFrame = requestAnimationFrame(draw);
+  // Mouse parallax
+  useEffect(() => {
+    if (!siteReady) return;
+
+    const onMouseMove = (e: MouseEvent) => {
+      setMouseX(e.clientX);
     };
-    draw();
 
-    return () => {
-      cancelAnimationFrame(animFrame);
-      window.removeEventListener('resize', resize);
-    };
-  }, []);
+    window.addEventListener('mousemove', onMouseMove);
+    return () => window.removeEventListener('mousemove', onMouseMove);
+  }, [siteReady]);
 
   // Ticker animation
   useEffect(() => {
@@ -73,9 +57,9 @@ export default function Hero() {
     let x = 0;
     let raf: number;
     const speed = 0.5;
-    const tickerWidth = ticker.scrollWidth / 2;
 
     const animate = () => {
+      const tickerWidth = ticker.scrollWidth / 2;
       x -= speed;
       if (Math.abs(x) >= tickerWidth) x = 0;
       ticker.style.transform = `translateX(${x}px)`;
@@ -84,6 +68,11 @@ export default function Hero() {
     raf = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(raf);
   }, []);
+
+  const parallaxOffset =
+    typeof window !== 'undefined'
+      ? (mouseX / (window.innerWidth || 1) - 0.5)
+      : 0;
 
   const tickerText =
     'ARCHITECTURE · INTERIOR DESIGN · CONSTRUCTION · KAMPALA, UGANDA · JUBA, SOUTH SUDAN · DESIGN-BUILD · ULTERNATIVE SPACES · ';
@@ -94,117 +83,172 @@ export default function Hero() {
       style={{
         minHeight: '100vh',
         position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
         backgroundColor: 'var(--ink)',
+        backgroundImage:
+          'linear-gradient(rgba(198,156,26,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(198,156,26,0.035) 1px, transparent 1px)',
+        backgroundSize: '72px 72px',
         overflow: 'hidden',
       }}
     >
-      {/* Background canvas */}
-      <canvas
-        ref={canvasRef}
-        id="heroCanvas"
+      {/* Top-left corner label */}
+      <span
         style={{
           position: 'absolute',
-          inset: 0,
-          width: '100%',
-          height: '100%',
-          pointerEvents: 'none',
-          opacity: 0.35,
-        }}
-      />
-
-      {/* Top bar */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          padding: '20px 5vw',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          paddingTop: 100,
+          top: 100,
+          left: '5vw',
+          fontFamily: 'var(--font-mono)',
+          fontSize: 9,
+          color: 'var(--steel)',
+          letterSpacing: '0.15em',
+          textTransform: 'uppercase',
+          zIndex: 2,
         }}
       >
-        <span
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 9,
-            color: 'var(--steel)',
-            letterSpacing: '0.15em',
-            textTransform: 'uppercase',
-          }}
-        >
-          DESIGN-BUILD · EST. KAMPALA
-        </span>
-        <span
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 9,
-            color: 'var(--steel)',
-            letterSpacing: '0.15em',
-            textTransform: 'uppercase',
-          }}
-        >
-          KAMPALA, UG · JUBA, SS
-        </span>
-      </div>
+        DESIGN-BUILD · EST. KAMPALA
+      </span>
 
-      {/* Main content */}
+      {/* Top-right corner label */}
+      <span
+        style={{
+          position: 'absolute',
+          top: 100,
+          right: '5vw',
+          fontFamily: 'var(--font-mono)',
+          fontSize: 9,
+          color: 'var(--steel)',
+          letterSpacing: '0.15em',
+          textTransform: 'uppercase',
+          zIndex: 2,
+        }}
+      >
+        28.4°N 36.8°E
+      </span>
+
+      {/* Center content */}
       <div
         style={{
           padding: '0 5vw',
           position: 'relative',
           zIndex: 2,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          minHeight: '100vh',
         }}
       >
-        <h1
-          style={{
-            fontFamily: 'var(--font-syne)',
-            fontWeight: 800,
-            fontSize: 'clamp(72px, 12vw, 180px)',
-            letterSpacing: '-0.04em',
-            lineHeight: 0.88,
-            color: 'var(--parch)',
-            margin: 0,
-          }}
-        >
-          <span style={{ display: 'block' }}>ULTERNATIVE</span>
-          <span style={{ display: 'block' }}>SPACES.</span>
-        </h1>
+        {/* Line 1: ULTERNATIVE */}
+        <div style={{ overflow: 'hidden' }}>
+          <div
+            ref={line1Ref}
+            style={{
+              transform: siteReady ? undefined : 'translateY(110%)',
+              transition: 'transform 0.6s ease',
+              willChange: 'transform',
+            }}
+          >
+            <div
+              style={{
+                transform: siteReady
+                  ? `translateX(${parallaxOffset * -30}px)`
+                  : 'none',
+                transition: 'transform 0.6s ease',
+              }}
+            >
+              <h1
+                style={{
+                  fontFamily: 'var(--font-syne)',
+                  fontWeight: 800,
+                  fontSize: 'clamp(52px, 7.5vw, 110px)',
+                  letterSpacing: '-0.04em',
+                  lineHeight: 0.88,
+                  color: 'var(--parch)',
+                  margin: 0,
+                }}
+              >
+                ULTERNATIVE
+              </h1>
+            </div>
+          </div>
+        </div>
 
-        <p
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 10,
-            color: 'var(--steel)',
-            letterSpacing: '0.15em',
-            textTransform: 'uppercase',
-            marginTop: 32,
-          }}
-        >
-          Architecture · Interior Design · Design-Build
-        </p>
-
+        {/* Gold rule */}
         <div
+          ref={ruleRef}
           style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 8,
-            marginTop: 32,
+            width: '60%',
+            height: 1,
+            background: 'linear-gradient(90deg, transparent, var(--gold), transparent)',
+            marginLeft: '5%',
+            margin: '16px 0 16px 5%',
+            willChange: 'transform',
           }}
-        >
-          {FILTER_BUTTONS.map((btn) => (
-            <FilterButton
-              key={btn}
-              label={btn}
-              active={activeFilter === btn}
-              onClick={() => setActiveFilter(btn)}
-            />
-          ))}
+        />
+
+        {/* Line 2: SPACES. */}
+        <div style={{ overflow: 'hidden' }}>
+          <div
+            ref={line2Ref}
+            style={{
+              willChange: 'transform',
+            }}
+          >
+            <div
+              style={{
+                transform: siteReady
+                  ? `translateX(${parallaxOffset * 20}px)`
+                  : 'none',
+                transition: 'transform 0.6s ease',
+              }}
+            >
+              <h1
+                style={{
+                  fontFamily: 'var(--font-syne)',
+                  fontWeight: 800,
+                  fontSize: 'clamp(52px, 7.5vw, 110px)',
+                  letterSpacing: '-0.04em',
+                  lineHeight: 0.88,
+                  color: 'var(--parch)',
+                  margin: 0,
+                }}
+              >
+                SPACES<span style={{ color: 'var(--ember)' }}>.</span>
+              </h1>
+            </div>
+          </div>
+        </div>
+
+        {/* Info row */}
+        <div ref={infoRef} style={{ marginTop: 40 }}>
+          <p
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              color: 'var(--steel)',
+              letterSpacing: '0.15em',
+              textTransform: 'uppercase',
+              marginBottom: 24,
+            }}
+          >
+            Architecture · Interior Design · Design-Build
+          </p>
+
+          {/* Filter buttons */}
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 8,
+            }}
+          >
+            {FILTER_BUTTONS.map((btn) => (
+              <FilterButton
+                key={btn}
+                label={btn}
+                active={activeFilter === btn}
+                onClick={() => setActiveFilter(btn)}
+              />
+            ))}
+          </div>
         </div>
       </div>
 
@@ -215,10 +259,11 @@ export default function Hero() {
           bottom: 48,
           left: 0,
           right: 0,
-          padding: '24px 5vw',
+          padding: '0 5vw',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
+          zIndex: 2,
         }}
       >
         <span
@@ -245,7 +290,7 @@ export default function Hero() {
         </span>
       </div>
 
-      {/* Scrolling ticker */}
+      {/* Bottom scrolling ticker */}
       <div
         style={{
           position: 'absolute',
@@ -257,6 +302,7 @@ export default function Hero() {
           backgroundColor: 'rgba(14,12,10,0.6)',
           padding: '10px 0',
           whiteSpace: 'nowrap',
+          zIndex: 2,
         }}
       >
         <div ref={tickerRef} style={{ display: 'inline-flex', willChange: 'transform' }}>
@@ -298,7 +344,7 @@ function FilterButton({
       onMouseLeave={() => setHovered(false)}
       style={{
         border: active || hovered ? '1px solid var(--ember)' : '1px solid rgba(242,232,211,0.15)',
-        padding: '8px 14px',
+        padding: '6px 12px',
         fontFamily: 'var(--font-mono)',
         fontSize: 9,
         letterSpacing: '0.12em',
@@ -307,6 +353,7 @@ function FilterButton({
         backgroundColor: active ? 'rgba(232,82,10,0.12)' : 'transparent',
         cursor: 'pointer',
         transition: 'all 0.2s ease',
+        boxShadow: active ? '0 0 12px rgba(232,82,10,0.2)' : 'none',
       }}
     >
       {label}

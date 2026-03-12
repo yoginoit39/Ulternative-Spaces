@@ -1,44 +1,64 @@
 'use client';
-import { useState } from 'react';
-import Image from 'next/image';
+import { useRef, useState, useEffect } from 'react';
 
 const SERVICES = [
   {
     num: '01',
-    name: 'Architecture',
-    image: '/images/Image from Facebook (1).jpg',
+    word: 'ARCHITECTURE',
     description:
-      'From concept to construction documents. Buildings that define their surroundings with structural integrity and lasting aesthetic vision.',
+      'From concept to construction documents. We design buildings that define their surroundings — structurally bold, aesthetically lasting.',
     tags: ['Residential', 'Commercial', 'Institutional'],
   },
   {
     num: '02',
-    name: 'Interior Design',
-    image: '/images/Image from Facebook (11).jpg',
+    word: 'INTERIORS',
     description:
-      'Transforming enclosed space into lived experience. Every material, light source, and proportion curated for environments of lasting beauty.',
+      'Transforming enclosed space into lived experience. Materials, light, and proportion curated for enduring beauty.',
     tags: ['Residential', 'Hospitality', 'Office'],
   },
   {
     num: '03',
-    name: 'Design-Build',
-    image: '/images/Image from Facebook (19).jpg',
+    word: 'DESIGN-BUILD',
     description:
-      'Seamless delivery from first sketch to final handover. Our integrated approach eliminates gaps between design and construction.',
+      'Seamless delivery from first sketch to final handover. One team, zero gaps between vision and construction.',
     tags: ['Turnkey', 'Renovation', 'Fit-out'],
   },
 ];
 
 export default function Services() {
+  const tickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const ticker = tickerRef.current;
+    if (!ticker) return;
+    let x = 0;
+    let raf: number;
+    const speed = 0.4;
+
+    const animate = () => {
+      const w = ticker.scrollWidth / 2;
+      x -= speed;
+      if (Math.abs(x) >= w) x = 0;
+      ticker.style.transform = `translateX(${x}px)`;
+      raf = requestAnimationFrame(animate);
+    };
+    raf = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  const tickerText = 'ARCHITECTURE · INTERIOR DESIGN · DESIGN-BUILD · ';
+
   return (
     <section
       id="services"
       style={{
-        padding: '140px 5vw',
         backgroundColor: 'var(--mid)',
+        padding: '120px 0 100px',
+        overflow: 'hidden',
       }}
     >
-      <div style={{ marginBottom: 60 }}>
+      {/* Header */}
+      <div style={{ padding: '0 5vw', marginBottom: 60 }}>
         <p
           style={{
             fontFamily: 'var(--font-mono)',
@@ -66,210 +86,156 @@ export default function Services() {
         </h2>
       </div>
 
+      {/* Service rows */}
+      {SERVICES.map((service) => (
+        <ServiceRow key={service.num} service={service} />
+      ))}
+
+      {/* Bottom marquee */}
       <div
         style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: 24,
+          overflow: 'hidden',
+          borderTop: '1px solid rgba(242,232,211,0.06)',
+          padding: '16px 0',
+          marginTop: 40,
+          whiteSpace: 'nowrap',
         }}
-        className="services-grid"
       >
-        {SERVICES.map((service) => (
-          <ServiceCard key={service.name} service={service} />
-        ))}
+        <div ref={tickerRef} style={{ display: 'inline-flex', willChange: 'transform' }}>
+          {[tickerText, tickerText].map((t, i) => (
+            <span
+              key={i}
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 9,
+                color: 'var(--steel)',
+                letterSpacing: '0.2em',
+                textTransform: 'uppercase',
+                paddingRight: '2em',
+              }}
+            >
+              {t}
+            </span>
+          ))}
+        </div>
       </div>
-
-      <style>{`
-        @media (min-width: 900px) {
-          .services-grid {
-            grid-template-columns: repeat(3, 1fr) !important;
-          }
-        }
-      `}</style>
     </section>
   );
 }
 
-function ServiceCard({ service }: { service: (typeof SERVICES)[number] }) {
-  const [flipped, setFlipped] = useState(false);
-
-  const handleClick = () => {
-    // Toggle on tap (touch devices) — hover handles desktop
-    if (typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches) {
-      setFlipped((f) => !f);
-    }
-  };
+function ServiceRow({ service }: { service: (typeof SERVICES)[number] }) {
+  const [hovered, setHovered] = useState(false);
 
   return (
     <div
-      onMouseEnter={() => setFlipped(true)}
-      onMouseLeave={() => setFlipped(false)}
-      onClick={handleClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
-        height: 480,
-        perspective: 1000,
-        cursor: 'pointer',
+        position: 'relative',
+        padding: '32px 5vw',
+        borderTop: hovered
+          ? '1px solid rgba(232,82,10,0.3)'
+          : '1px solid rgba(242,232,211,0.06)',
+        transition: 'border-top-color 0.4s ease',
       }}
     >
-      <div
+      {/* Number — top right */}
+      <span
         style={{
-          position: 'relative',
-          width: '100%',
-          height: '100%',
-          transformStyle: 'preserve-3d',
-          transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
-          transition: 'transform 0.55s var(--ease-out)',
+          position: 'absolute',
+          top: 40,
+          right: '5vw',
+          fontFamily: 'var(--font-mono)',
+          fontSize: 9,
+          color: 'var(--ember)',
+          letterSpacing: '0.15em',
+          opacity: 0.8,
         }}
       >
-        {/* Front face */}
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            backfaceVisibility: 'hidden',
-            WebkitBackfaceVisibility: 'hidden',
-            backgroundColor: 'rgba(242,232,211,0.03)',
-            border: '1px solid rgba(242,232,211,0.08)',
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-          }}
-        >
-          <div style={{ padding: '18px 20px 12px' }}>
-            <span
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 9,
-                color: 'var(--ember)',
-                letterSpacing: '0.12em',
-              }}
-            >
-              {service.num}
-            </span>
-          </div>
+        {service.num}
+      </span>
 
-          <div
-            style={{
-              position: 'relative',
-              height: 300,
-              flex: '0 0 300px',
-              overflow: 'hidden',
-            }}
-          >
-            <Image
-              src={service.image}
-              alt={service.name}
-              fill
-              unoptimized
-              style={{ objectFit: 'cover' }}
-            />
-          </div>
+      {/* The big word */}
+      <div
+        style={{
+          fontFamily: 'var(--font-syne)',
+          fontWeight: 800,
+          fontSize: 'clamp(40px, 5.5vw, 80px)',
+          letterSpacing: '-0.04em',
+          lineHeight: 1,
+          color: hovered ? 'var(--parch)' : 'rgba(242,232,211,0.15)',
+          transition: 'color 0.4s ease',
+          userSelect: 'none',
+        }}
+      >
+        {service.word}
+      </div>
 
-          <div style={{ padding: '20px 20px 16px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-            <h3
-              style={{
-                fontFamily: 'var(--font-syne)',
-                fontWeight: 800,
-                fontSize: 20,
-                color: 'var(--parch)',
-                margin: 0,
-              }}
-            >
-              {service.name}
-            </h3>
-            <p
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 9,
-                color: 'var(--steel)',
-                letterSpacing: '0.1em',
-                marginTop: 8,
-              }}
-            >
-              tap or hover to explore →
-            </p>
-          </div>
-        </div>
-
-        {/* Back face */}
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            backfaceVisibility: 'hidden',
-            WebkitBackfaceVisibility: 'hidden',
-            transform: 'rotateY(180deg)',
-            backgroundColor: 'var(--ink)',
-            border: '1px solid rgba(232,82,10,0.25)',
-            padding: '36px 28px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div>
-            <h3
-              style={{
-                fontFamily: 'var(--font-syne)',
-                fontWeight: 800,
-                fontSize: 24,
-                color: 'var(--parch)',
-                marginBottom: 20,
-              }}
-            >
-              {service.name}
-            </h3>
-            <p
-              style={{
-                fontFamily: 'var(--font-cormorant)',
-                fontWeight: 300,
-                fontSize: 17,
-                color: 'var(--steel)',
-                lineHeight: 1.65,
-                marginBottom: 28,
-              }}
-            >
-              {service.description}
-            </p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {service.tags.map((tag) => (
-                <span
-                  key={tag}
-                  style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 8,
-                    color: 'var(--ember)',
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase',
-                    border: '1px solid rgba(232,82,10,0.3)',
-                    padding: '4px 10px',
-                  }}
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <a
-            href="/#contact"
-            onClick={(e) => e.stopPropagation()}
+      {/* Tags — below word on hover */}
+      <div
+        style={{
+          display: 'flex',
+          gap: 8,
+          marginTop: 12,
+          flexWrap: 'wrap',
+          opacity: hovered ? 1 : 0,
+          transform: hovered ? 'translateY(0)' : 'translateY(8px)',
+          transition: 'opacity 0.4s ease, transform 0.4s ease',
+        }}
+      >
+        {service.tags.map((tag) => (
+          <span
+            key={tag}
             style={{
               fontFamily: 'var(--font-mono)',
-              fontSize: 9,
+              fontSize: 8,
               color: 'var(--ember)',
-              letterSpacing: '0.12em',
+              letterSpacing: '0.1em',
               textTransform: 'uppercase',
-              textDecoration: 'none',
-              borderBottom: '1px solid rgba(232,82,10,0.4)',
-              paddingBottom: 4,
-              alignSelf: 'flex-start',
+              border: '1px solid rgba(232,82,10,0.3)',
+              padding: '4px 10px',
             }}
           >
-            Start a project →
-          </a>
-        </div>
+            {tag}
+          </span>
+        ))}
       </div>
+
+      {/* Description — absolute right, slides in on hover */}
+      <div
+        className="service-description"
+        style={{
+          position: 'absolute',
+          right: '5vw',
+          top: '50%',
+          transform: hovered
+            ? 'translateY(-50%) translateX(0)'
+            : 'translateY(-50%) translateX(20px)',
+          maxWidth: 380,
+          opacity: hovered ? 1 : 0,
+          transition: 'opacity 0.4s ease, transform 0.4s ease',
+          pointerEvents: 'none',
+        }}
+      >
+        <p
+          style={{
+            fontFamily: 'var(--font-cormorant)',
+            fontWeight: 300,
+            fontSize: 18,
+            color: 'var(--steel)',
+            lineHeight: 1.7,
+            margin: 0,
+          }}
+        >
+          {service.description}
+        </p>
+      </div>
+
+      <style>{`
+        @media (max-width: 767px) {
+          .service-description { display: none !important; }
+        }
+      `}</style>
     </div>
   );
 }

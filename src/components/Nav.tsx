@@ -1,12 +1,14 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const NAV_LINKS = [
   { href: '/#about', label: 'About' },
   { href: '/#work', label: 'Work' },
   { href: '/#gallery', label: 'Gallery' },
   { href: '/#services', label: 'Services' },
+  { href: '/philosophy', label: 'Philosophy' },
   { href: '/#contact', label: 'Contact' },
 ];
 
@@ -49,6 +51,14 @@ export default function Nav() {
       >
         {/* Logo */}
         <Link href="/" onClick={closeMenu} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+          <Image
+            src="/images/logo.svg"
+            alt="Ulternative Spaces"
+            width={28}
+            height={28}
+            unoptimized
+            style={{ borderRadius: '50%', flexShrink: 0 }}
+          />
           <span
             style={{
               fontFamily: 'var(--font-syne)',
@@ -61,6 +71,7 @@ export default function Nav() {
           </span>
           <span style={{ color: 'var(--steel)', fontSize: 12 }}>·</span>
           <span
+            className="nav-wordmark"
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 9,
@@ -264,6 +275,7 @@ export default function Nav() {
           .nav-cta-desktop { display: none !important; }
           .nav-hamburger { display: flex !important; }
           .nav-overlay { display: flex !important; }
+          .nav-wordmark { display: none !important; }
         }
       `}</style>
     </>

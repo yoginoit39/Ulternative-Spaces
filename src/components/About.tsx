@@ -3,14 +3,18 @@ import { useEffect, useRef } from 'react';
 import Image from 'next/image';
 
 const METRICS = [
-  { value: '50+', label: 'Projects' },
-  { value: '8+', label: 'Years' },
-  { value: '2', label: 'Countries' },
+  { target: 50, label: 'Projects', suffix: '+' },
+  { target: 8,  label: 'Years',    suffix: '+' },
+  { target: 2,  label: 'Countries', suffix: '' },
 ];
 
 export default function About() {
   const sectionRef = useRef<HTMLElement>(null);
+  const metricsRef = useRef<HTMLDivElement>(null);
+  const counterRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const hasAnimated = useRef(false);
 
+  // Reveal-up observer
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
@@ -28,6 +32,49 @@ export default function About() {
     );
 
     elements.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
+  // GSAP counter animation on scroll into view
+  useEffect(() => {
+    const metricsEl = metricsRef.current;
+    if (!metricsEl) return;
+
+    const animateCounters = async () => {
+      if (hasAnimated.current) return;
+      hasAnimated.current = true;
+
+      const gsapModule = await import('gsap');
+      const gsap = gsapModule.default || gsapModule.gsap;
+      if (!gsap) return;
+
+      METRICS.forEach((metric, i) => {
+        const el = counterRefs.current[i];
+        if (!el) return;
+        const obj = { val: 0 };
+        gsap.to(obj, {
+          val: metric.target,
+          duration: 2,
+          ease: 'power2.out',
+          onUpdate: function () {
+            el.textContent = Math.round(obj.val) + metric.suffix;
+          },
+        });
+      });
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            animateCounters();
+          }
+        });
+      },
+      { threshold: 0.3 }
+    );
+
+    observer.observe(metricsEl);
     return () => observer.disconnect();
   }, []);
 
@@ -81,8 +128,9 @@ export default function About() {
             />
           </div>
 
-          {/* Metrics row */}
+          {/* Metrics row with GSAP counters */}
           <div
+            ref={metricsRef}
             style={{
               display: 'flex',
               gap: 40,
@@ -90,9 +138,10 @@ export default function About() {
               flexWrap: 'wrap',
             }}
           >
-            {METRICS.map((m) => (
+            {METRICS.map((m, i) => (
               <div key={m.label}>
                 <div
+                  ref={(el) => { counterRefs.current[i] = el; }}
                   style={{
                     fontFamily: 'var(--font-syne)',
                     fontWeight: 800,
@@ -101,7 +150,7 @@ export default function About() {
                     lineHeight: 1,
                   }}
                 >
-                  {m.value}
+                  0{m.suffix}
                 </div>
                 <div
                   style={{
@@ -134,10 +183,11 @@ export default function About() {
               paddingLeft: 24,
             }}
           >
-            "We don&apos;t just design buildings — we design the quality of your life."
+            &ldquo;We don&apos;t just design buildings — we design the quality of your life.&rdquo;
           </blockquote>
 
           <p
+            className="reveal-up"
             style={{
               fontFamily: 'var(--font-cormorant)',
               fontWeight: 300,
@@ -152,6 +202,7 @@ export default function About() {
           </p>
 
           <p
+            className="reveal-up"
             style={{
               fontFamily: 'var(--font-cormorant)',
               fontWeight: 300,
